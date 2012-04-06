@@ -66,8 +66,8 @@ to setup
   ]
   ;stabilization
   ask turtles[ establish-color ]
-  init-age-USA2010
-  set-life-distribution-USA2010 
+  init-age-USA2007
+  set-life-distribution-USA2007 
   set-outputs
   
   reset-ticks
@@ -80,9 +80,9 @@ to go
     moving-stage
     
     set-outputs            
-    update-plots
+    do-plots
     reset-decisions 
-    replacement
+    if replacement? [replacement]
     update-views
   ask turtles [
     ifelse am-i-the-best? [set shape "face happy"][set shape "face sad"]
@@ -95,7 +95,6 @@ to learning-stage
    if rule?   
    [     
        select-rule
-       ;establish-color
        select-behavior
    ]
    if behavior? [select-behavior]
@@ -226,20 +225,48 @@ to reset-decisions
   set behavior? false
   ] 
 end   
-to replacement
-  ask turtles [    
-     let index1 floor age / 5
-     let index2 floor (age + 1) / 5
+to replacement_test
+     let gap 5
+     if timescale = "months" [set gap 60]  
+  ask turtles [
+       
+     let index1 floor age / gap
+     let index2 index1 + 1
+     
      if index1 > 20 [set index1 20]
      if index2 > 20 [set index2 20]
      
-     let ex1 item index1 life-distribution
-     let ex2 item index2 life-distribution
+     let ex1t item index1 life-distribution
+     let ex2t item index2 life-distribution
      
-     let prob-death 1 - (ex1 / (ex2 + 1))
+     let ex1 ex1t + (age mod gap)*(ex2t - ex1t)/ gap 
+     let ex2 ex1t + ((age mod gap) + 1)*(ex2t - ex1t)/ gap
+     
+     let prob-survive (ex1)/(ex2 + 1) 
+     ;let prob-survive exp(ex1 - ex2)
+     
+     ifelse  random-float 1  < prob-survive [set age age + 1][replace]
+  ]
+end     
+to replacement
+     let gap 5
+     if timescale = "months" [set gap 60]  
+  ask turtles [
+       
+     let index1 floor age / gap
+     let index2 index1 + 1
+     
+     if index1 > 17 [set index1 17]
+     if index2 > 17 [set index2 17]
+     
+     let ex1t item index1 life-distribution
+     let ex2t item index2 life-distribution
+     
+     let prob-death ex1t + (age mod gap)*(ex2t - ex1t)/ gap
+     
      ifelse  random-float 1  < prob-death [replace][set age age + 1]
   ]
-end   
+end  
 to stabilization
   set counterfactual-reflection? true
     repeat 20 [
@@ -259,7 +286,7 @@ to set-outputs
   set conf count turtles with [rule = 3] / count turtles
   set anti count turtles with [rule = 4] / count turtles
 end
-to update-plots
+to do-plots
   set-current-plot "cooperation"
   set-current-plot-pen "cooperation"
   plot cooperation-rate
@@ -276,11 +303,21 @@ to update-plots
   plot conf
   set-current-plot-pen "anti"
   plot anti
+  set-current-plot "distribution theta"
+  set-current-plot-pen "theta_1"
+  set-histogram-num-bars 1000
+  histogram [1 / theta_1] of turtles
+  set-current-plot-pen "theta_2"
+  set-histogram-num-bars 1000
+  histogram [1 / theta_2] of turtles 
+  set-current-plot "distribution lambda"
+  set-histogram-num-bars 1000
+  histogram [weighting-history] of turtles
   set-current-plot "track"
   set-current-plot-pen "pen1"
-  plot count turtles with [rule?]
-  set-current-plot-pen "pen2"
-  plot count turtles with [move?]
+  plot mean [theta_1] of turtles
+
+ 
   
 end
 to update-views
@@ -308,20 +345,37 @@ to replace
     set rule? false
     set behavior? false
     set move? false
-    ;set theta_1 random-float 1.0
-    ;set theta_2 random-float 1.0
-    ;set weighting-history random-float 1.0
-    ;set likelihood-to-move random-float 1.0
+    if random-init
+    [
+    set theta_1 random-float 1.0
+    set theta_2 random-float 1.0
+    set weighting-history random-float 1.0
+    set likelihood-to-move random-float 1.0
+    ]
     set rule (random 4) + 1
- 
+    move-to one-of patches with [not any? turtles-here]
 end
 to init-age-USA2010
   let census-dist (list 0.0654 0.0659 0.0670 0.0714 0.0699 0.0683 0.0647 0.0654 0.0677 0.0735 0.0722 0.0637 0.0545 0.0403 0.0301 0.0237 0.0186 0.0117 0.0047 0.0012 0.0002)
-  ask turtles [
+   
+    ask turtles [
     let temp-init random 21
     while [random-float 1 > item temp-init census-dist][set temp-init random 21]
     set age (temp-init * 5) + random 5
+    if timescale = "months" [ set age age * 12 + random 12]
     ]
+    
+end
+to init-age-USA2007
+  let census-dist (list 0.069 0.067 0.069 0.071 0.069 0.07 0.065 0.07 0.074 0.076 0.07 0.061 0.047 0.036 0.028 0.025 0.019 0.013)
+   
+    ask turtles [
+    let temp-init random 18
+    while [random-float 1 > item temp-init census-dist][set temp-init random 18]
+    set age (temp-init * 5) + random 5
+    if timescale = "months" [ set age age * 12 + random 12]
+    ]
+    
 end
 to set-life-distribution-USA2010 ;;Life expectation for ages according data colected by the Centers for Disease Control
                                  ;and Prevention’s National Center for Health Statistics (NCHS) USA 2010
@@ -329,6 +383,14 @@ to set-life-distribution-USA2010 ;;Life expectation for ages according data cole
                                  ;Reported ages have an interval of 5 years starting from 0 until 100 years
 
   set life-distribution (list 78.7 74.3 69.3 64.4 59.5 54.8 50.0 45.3 40.6 36.0 31.5 27.2 23.1 19.2 15.5 12.2 9.2 6.6 4.7 3.3 2.4) 
+end
+to set-life-distribution-USA2007 ;;Life expectation for ages according data colected by the Centers for Disease Control
+                                 ;and Prevention’s National Center for Health Statistics (NCHS) USA 2010
+                                 ;Murphy, Xu, and Kochanek 'Deaths: preliminary data 2010' National Vital Stat. Reports 60-4
+                                 ;Reported ages have an interval of 5 years starting from 0 until 100 years 
+
+  set life-distribution (list 0.0316 0.0006 0.0021 0.0035 0.0041 0.0046 0.0064 0.0082 0.0135 0.0188 0.0290 0.0392 0.0645 0.0899 0.1570 0.2240 0.4014 0.5788)
+    
 end
 to interact  ;; calculates the agent's payoff for Prisioner's Dilema. Each agents plays only with its neighbors
           
@@ -496,21 +558,21 @@ to copy-strategy [temp-agent]
   
       set rule [rule] of temp-agent 
       set theta_1 [theta_1] of temp-agent 
-      set theta_1 add-noise "theta_1" Transcription-error
+      set theta_1 add-noise "theta_1" Transcription-error 
             
       set theta_2 [theta_2] of temp-agent 
-      set theta_2 add-noise "theta_2" Transcription-error
+      set theta_2 add-noise "theta_2" Transcription-error 
       
       set weighting-history [weighting-history] of temp-agent 
-      set weighting-history add-noise "weighting-history" Transcription-error
+      set weighting-history add-noise "weighting-history" Transcription-error 
       
       set likelihood-to-move [likelihood-to-move] of temp-agent 
-      set likelihood-to-move add-noise "likelihood-to-move" Transcription-error
+      set likelihood-to-move add-noise "likelihood-to-move" Transcription-error 
       
      
 end
 to-report add-noise [value noise-std]
-      let epsilon random-normal 0.0 noise-std
+      let epsilon random-normal 0.0 noise-std * 100
       if ( epsilon <= -100 )
       [ set epsilon -99] 
       let noisy-value runresult value * 100 / ( 100 + epsilon )
@@ -630,25 +692,25 @@ NIL
 NIL
 
 TEXTBOX
-246
-450
-386
-604
- Strategies colormap\n\nRed       Maxi\nGreen    mini\nYellow    Conformist\nWhite     Anti-conformist\n                      \n                       
+405
+390
+561
+484
+ Strategies colormap\n\nRed       Maxi\nGreen    mini\nBlue    Conformist\nWhite     Anti-conformist\n                      \n                       
 11
 0.0
 0
 
 SLIDER
-4
-116
-179
-149
+3
+80
+178
+113
 strength-of-dilemma
 strength-of-dilemma
 0
 0.5
-0.07
+0.13
 0.01
 1
 NIL
@@ -694,10 +756,10 @@ PENS
 "anti" 1.0 0 -16777216 true
 
 SLIDER
-5
-151
-177
-184
+4
+115
+176
+148
 inicoop
 inicoop
 0
@@ -709,66 +771,66 @@ NIL
 HORIZONTAL
 
 SLIDER
+3
+45
+175
+78
+density
+density
+0
+1
+0.92
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+5
+152
+179
+185
+Transcription-error
+Transcription-error
+0
+1
+0.08
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
 4
-81
-176
-114
-density
-density
-0
-1
-0.39
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-8
-201
-182
-234
-Transcription-error
-Transcription-error
-0
-1
-0.06
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-9
-239
-230
-272
+189
+225
+222
 Initial-prob-update-rule
 Initial-prob-update-rule
 0
 1.0
-1
+0.29
 0.01
 1
 NIL
 HORIZONTAL
 
 SWITCH
-15
-404
-154
-437
+9
+354
+148
+387
 random-init
 random-init
-0
+1
 1
 -1000
 
 SWITCH
-13
-448
-223
-481
+8
+389
+218
+422
 Counterfactual-reflection?
 Counterfactual-reflection?
 1
@@ -776,45 +838,45 @@ Counterfactual-reflection?
 -1000
 
 SLIDER
-10
-283
-231
-316
+5
+233
+226
+266
 Initial-prob-update-behavior
 Initial-prob-update-behavior
 0
 1
-1
+0.7
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-11
-326
-235
-359
+6
+276
+230
+309
 Initial-weighting-history
 Initial-weighting-history
 0
 1
-0.46
+0.04
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-12
-363
-235
-396
+7
+313
+230
+346
 Initial-like-to-move
 Initial-like-to-move
 0
 1
-0.15
+0.05
 0.01
 1
 NIL
@@ -835,7 +897,8 @@ NIL
 true
 true
 PENS
-"default" 1.0 0 -16777216 true
+"theta_1" 1.0 0 -2674135 true
+"theta_2" 1.0 0 -13840069 true
 
 PLOT
 575
@@ -853,16 +916,6 @@ true
 false
 PENS
 "default" 1.0 0 -16777216 true
-
-TEXTBOX
-394
-451
-592
-616
-Hubnet clients represent:\n1. The agent actions: cooperate-green defect-red\n2. The payoffs : grayscale\nDo not close the hubnet clients nor tick reset
-12
-0.0
-1
 
 PLOT
 571
@@ -883,15 +936,36 @@ PENS
 "pen2" 1.0 0 -13345367 true
 
 SWITCH
-15
-489
-147
-522
+8
+425
+140
+458
 conflict?
 conflict?
 1
 1
 -1000
+
+SWITCH
+10
+462
+165
+495
+replacement?
+replacement?
+0
+1
+-1000
+
+CHOOSER
+233
+385
+371
+430
+timescale
+timescale
+"months" "years"
+0
 
 @#$#@#$#@
 ## WHAT IS IT?
