@@ -62,9 +62,8 @@ to setup
       set likelihood-to-move Initial-like-to-move 
       ]
       
-        
   ]
-  ;stabilization
+  stabilization
   ask turtles[ establish-color ]
   init-age-USA2007
   set-life-distribution-USA2007 
@@ -87,6 +86,7 @@ to go
   ask turtles [
     ifelse am-i-the-best? [set shape "face happy"][set shape "face sad"]
     ]  
+  
   update-views
     tick
 end
@@ -194,7 +194,7 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
     report test-h-s
 end
 to moving-stage
-   ask turtles [if move? and not am-i-the-best? [move-agent]] 
+   ask turtles [if move? [move-agent]] 
 end
 to decision-stage
    ask turtles [ 
@@ -211,11 +211,11 @@ to decision-stage
      [set move? false
       ifelse is-my-rule-the-best? [set behavior? true] [set rule? true] 
       ]
-     if (rule? or behavior?) and all? neighbors [not any? turtles-here]
+     if all? neighbors [not any? turtles-here]
      [set move? true
       set rule? false
       set behavior? false ]
-     if age < 12 [set rule? false]
+      if age < 10 [set rule? false]
      ]
 end
 to reset-decisions
@@ -225,56 +225,29 @@ to reset-decisions
   set behavior? false
   ] 
 end   
-to replacement_test
-     let gap 5
-     if timescale = "months" [set gap 60]  
-  ask turtles [
-       
-     let index1 floor age / gap
-     let index2 index1 + 1
-     
-     if index1 > 20 [set index1 20]
-     if index2 > 20 [set index2 20]
-     
-     let ex1t item index1 life-distribution
-     let ex2t item index2 life-distribution
-     
-     let ex1 ex1t + (age mod gap)*(ex2t - ex1t)/ gap 
-     let ex2 ex1t + ((age mod gap) + 1)*(ex2t - ex1t)/ gap
-     
-     let prob-survive (ex1)/(ex2 + 1) 
-     ;let prob-survive exp(ex1 - ex2)
-     
-     ifelse  random-float 1  < prob-survive [set age age + 1][replace]
-  ]
-end     
 to replacement
-     let gap 5
-     if timescale = "months" [set gap 60]  
+     let gap 1
+     if timescale = "months" [set gap 12]  
   ask turtles [
        
-     let index1 floor age / gap
-     let index2 index1 + 1
-     
-     if index1 > 17 [set index1 17]
-     if index2 > 17 [set index2 17]
-     
-     let ex1t item index1 life-distribution
-     let ex2t item index2 life-distribution
-     
-     let prob-death ex1t + (age mod gap)*(ex2t - ex1t)/ gap
-     
+     let x floor age / gap 
+     if x > 119 [set x 119]
+     let prob-death item x life-distribution
+     if timescale = "months" 
+     [
+     set prob-death prob-death / 12
+     ]
      ifelse  random-float 1  < prob-death [replace][set age age + 1]
   ]
 end  
 to stabilization
-  set counterfactual-reflection? true
-    repeat 20 [
+  ;set counterfactual-reflection? true
+    repeat 10 [
   ask turtles [interact]
   ask turtles [select-behavior]    
   ]
-    ;repeat 20 [ask turtles[select-rule]]
-    set counterfactual-reflection? false
+    repeat 10 [ask turtles[select-rule]]
+   ; set counterfactual-reflection? false
     
 end
 to set-outputs
@@ -305,18 +278,30 @@ to do-plots
   plot anti
   set-current-plot "distribution theta"
   set-current-plot-pen "theta_1"
-  set-histogram-num-bars 1000
+  set-histogram-num-bars 100
   histogram [1 / theta_1] of turtles
-  set-current-plot-pen "theta_2"
+  
+  ;histogram [age] of turtles
+   set-current-plot-pen "theta_2"
   set-histogram-num-bars 1000
   histogram [1 / theta_2] of turtles 
-  set-current-plot "distribution lambda"
-  set-histogram-num-bars 1000
-  histogram [weighting-history] of turtles
+  set-current-plot "distribution alpha"
+  set-current-plot-pen "alpha"
+  ;set-histogram-num-bars 1000
+  ;histogram [weighting-history] of turtles
+  plot mean [weighting-history] of turtles
+  set-current-plot-pen "mu"
+  ; set-histogram-num-bars 1000
+  ;histogram  [likelihood-to-move] of turtles
+   plot mean [likelihood-to-move] of turtles
   set-current-plot "track"
   set-current-plot-pen "pen1"
   plot mean [theta_1] of turtles
-
+  set-current-plot-pen "pen2"
+  plot mean [theta_2] of turtles
+  plot-age-hist
+  plot-rule-theta
+ 
  
   
 end
@@ -337,7 +322,7 @@ to establish-color  ;; agent procedure
   if rule = 4  
     [set color white
       ]
-    
+  ifelse cooperate? [set size 1][set size 0.7]  
 end
 to replace  
     ifelse random-float 1.0 < 0.5 [set cooperate? true][set cooperate? false]        
@@ -353,7 +338,7 @@ to replace
     set likelihood-to-move random-float 1.0
     ]
     set rule (random 4) + 1
-    move-to one-of patches with [not any? turtles-here]
+    ;move-to one-of patches with [not any? turtles-here]
 end
 to init-age-USA2010
   let census-dist (list 0.0654 0.0659 0.0670 0.0714 0.0699 0.0683 0.0647 0.0654 0.0677 0.0735 0.0722 0.0637 0.0545 0.0403 0.0301 0.0237 0.0186 0.0117 0.0047 0.0012 0.0002)
@@ -389,7 +374,7 @@ to set-life-distribution-USA2007 ;;Life expectation for ages according data cole
                                  ;Murphy, Xu, and Kochanek 'Deaths: preliminary data 2010' National Vital Stat. Reports 60-4
                                  ;Reported ages have an interval of 5 years starting from 0 until 100 years 
 
-  set life-distribution (list 0.0316 0.0006 0.0021 0.0035 0.0041 0.0046 0.0064 0.0082 0.0135 0.0188 0.0290 0.0392 0.0645 0.0899 0.1570 0.2240 0.4014 0.5788)
+  set life-distribution (list 0.0067375 0.000464 0.0002865 0.0002165 0.000174 0.0001575 0.000147 0.000137 0.000124 0.000107 9.45e-05 9.8e-05 0.0001325 0.0002045 0.000305 0.000415 0.000521 0.000621 0.000709 0.000785 0.000863 0.0009375 0.000988 0.001006 0.001 0.000987 0.000978 0.000976 0.0009865 0.0010085 0.001035 0.0010655 0.001104 0.00115 0.001207 0.0012735 0.001354 0.0014505 0.001566 0.0017 0.00185 0.002016 0.0022 0.0024015 0.002621 0.0028585 0.0031155 0.003395 0.0036985 0.0040245 0.0043835 0.0047625 0.005141 0.005511 0.005887 0.006297 0.006758 0.00727 0.007839 0.008471 0.009184 0.0099695 0.0108055 0.011686 0.0126375 0.0137105 0.014928 0.016282 0.0177855 0.0194565 0.021371 0.0235095 0.0257935 0.028209 0.030833 0.0338595 0.037323 0.04111 0.0452255 0.049783 0.055009 0.0609785 0.0676135 0.074947 0.083097 0.092204 0.102388 0.113735 0.126297 0.140086 0.155102 0.171327 0.188734 0.20729 0.226949 0.246645 0.266066 0.284872 0.302715 0.319238 0.33667 0.355063 0.374468 0.394942 0.416545 0.43934 0.463392 0.488773 0.515555 0.543816 0.57364 0.605114 0.638328 0.67338 0.710373 0.749416 0.789422 0.828894 0.870338 0.913855)
     
 end
 to interact  ;; calculates the agent's payoff for Prisioner's Dilema. Each agents plays only with its neighbors
@@ -444,7 +429,6 @@ to-report best-elements ;; report a list with the agents with the best performan
   
   let myset (turtle-set turtles-on neighbors self)
   if rule = 1 [set myset myset with [score >= [score] of max-one-of myset [score] * 0.99]]
-  
   if rule = 2 [set myset myset with [score <= [score] of min-one-of myset [score] * 1.1]]
   if rule = 3 [
     let rules-list majority-rules
@@ -556,19 +540,28 @@ to-report counterfactual-satisfaction [my-turtle]
 end
 to copy-strategy [temp-agent]
   
-      set rule [rule] of temp-agent 
-      set theta_1 [theta_1] of temp-agent 
-      set theta_1 add-noise "theta_1" Transcription-error 
+      set rule [rule] of temp-agent
+      if random-float 1 < Transcription-error [set rule one-of [rule] of turtles-on neighbors]
+       
+      let theta_1T theta_1
+      set theta_1 [theta_1] of temp-agent
+      set theta_1 add-noise "theta_1" Transcription-error
+      set theta_1 theta_1T * (1 - influence) + theta_1 * influence 
             
+      let theta_2T theta_2
       set theta_2 [theta_2] of temp-agent 
       set theta_2 add-noise "theta_2" Transcription-error 
+      set theta_2 theta_2T * (1 - influence) + theta_2 * influence 
       
+      let weighting-historyT weighting-history
       set weighting-history [weighting-history] of temp-agent 
-      set weighting-history add-noise "weighting-history" Transcription-error 
-      
+      set weighting-history add-noise "weighting-history" Transcription-error
+      set weighting-history weighting-historyT * (1 - influence) + weighting-history * influence 
+            
+      let likelihood-to-moveT likelihood-to-move
       set likelihood-to-move [likelihood-to-move] of temp-agent 
       set likelihood-to-move add-noise "likelihood-to-move" Transcription-error 
-      
+      set likelihood-to-move likelihood-to-moveT * (1 - influence) + likelihood-to-move * influence 
      
 end
 to-report add-noise [value noise-std]
@@ -588,7 +581,6 @@ to select-behavior  ;; patch procedure
                                                                 ;;choose behavior (cooperate, not cooperate)
                                                                 ;; of neighbor who performed best according
                                                                 ;; the agent's rule 
-  
   if rule = 3
   [set cooperate? majority-behavior]                                                              
   if rule = 4 
@@ -606,19 +598,6 @@ to move-agent
     ]
   [move-to-empty]
 end
-to move-agent-test1
-  ifelse conflict?
-  [ if any? turtles-on neighbors
-    [
-      let target one-of other best-elements
-      if target = nobody [set target one-of turtles-on neighbors]
-      ifelse random-float 1 < ((1 - satisfaction)+(1 - [satisfaction] of target))* 0.5 [interchange-agents target][move-to-empty]
-      ;ifelse random-float 1 < (1 - satisfaction)*(1 - [satisfaction] of target)*(1 - [satisfaction] of target) [interchange-agents target][move-to-empty]
-      ;ifelse random-float 1 < (1 - satisfaction)*(1 - satisfaction)*(1 - [satisfaction] of target) [interchange-agents target][move-to-empty]
-    ]
-    ]
-  [move-to-empty]
-end
 to move-to-empty
   if any? neighbors with [not any? turtles-here] 
   [move-to one-of neighbors with [not any? turtles-here]]
@@ -631,6 +610,74 @@ to interchange-agents [my-target]
      move-to my-patch
      ]  
    move-to target-patch 
+end
+to-report age-histogram2
+  let mylist []
+  let i 0
+  let gap 1
+  if timescale = "months" [set gap 12]
+  let oldest floor (max [age] of turtles) / gap
+  while [i <= oldest]
+  [
+    ifelse any? turtles with [age >= i and age < i + gap]
+    [set mylist lput (mean [theta_2] of turtles with[age >= i and age < i + gap]) mylist]
+    [set mylist lput 0 mylist]
+    set i i + 1
+    ]
+  report mylist
+end
+to-report age-histogram1
+  let mylist []
+  let i 0
+  let gap 1
+  if timescale = "months" [set gap 12]
+  let oldest floor (max [age] of turtles) / gap
+  while [i <= oldest]
+  [
+    ifelse any? turtles with [age >= i and age < i + gap]
+    [set mylist lput (mean [theta_1] of turtles with[age >= i and age < i + gap]) mylist]
+    [set mylist lput 0 mylist]
+    set i i + 1
+    ]
+  report mylist
+end
+to-report age-influence
+  let mylist []
+  let i 0
+  let gap 1
+  if timescale = "months" [set gap 12]
+  let oldest floor (max [age] of turtles) / gap
+  while [i <= oldest]
+  [
+    ifelse any? turtles with [age >= i and age < i + gap]
+    [set mylist lput ((count turtles with [age >= i and age < i + gap and rule?]) / count turtles with [age >= i and age < i + gap]) mylist]
+    [set mylist lput 0 mylist]
+    set i i + 1
+    ]
+  report mylist
+end
+to plot-age-hist
+  let hist2 age-histogram2
+  let hist1 age-histogram1
+  set-current-plot "age_track"
+  set-current-plot-pen "theta_1"
+  plot-pen-reset
+  foreach hist1 [ plot ? ]
+  set-current-plot-pen "theta_2"
+  plot-pen-reset
+  foreach hist2 [ plot ? ]
+end
+to plot-rule-theta
+  set-current-plot "rule_track"
+  set-current-plot-pen "maxi"
+  plot abs (mean [theta_1] of turtles with [rule = 1] - mean [theta_2] of turtles with [rule = 1])
+ set-current-plot-pen "mini"
+  plot abs(mean [theta_1] of turtles with [rule = 2] - mean [theta_2] of turtles with [rule = 2])
+ set-current-plot-pen "conf"
+  plot abs(mean [theta_1] of turtles with [rule = 3] - mean [theta_2] of turtles with [rule = 3])
+ set-current-plot-pen "anti"
+  plot abs(mean [theta_1] of turtles with [rule = 4] - mean [theta_2] of turtles with [rule = 4])
+
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -676,9 +723,9 @@ NIL
 NIL
 
 BUTTON
-101
+90
 10
-178
+167
 43
 NIL
 go
@@ -710,7 +757,7 @@ strength-of-dilemma
 strength-of-dilemma
 0
 0.5
-0.13
+0.4
 0.01
 1
 NIL
@@ -764,7 +811,7 @@ inicoop
 inicoop
 0
 100
-56
+0
 1
 1
 NIL
@@ -779,7 +826,7 @@ density
 density
 0
 1
-0.92
+1
 0.01
 1
 NIL
@@ -794,7 +841,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.08
+0.05
 0.01
 1
 NIL
@@ -809,7 +856,7 @@ Initial-prob-update-rule
 Initial-prob-update-rule
 0
 1.0
-0.29
+1
 0.01
 1
 NIL
@@ -846,7 +893,7 @@ Initial-prob-update-behavior
 Initial-prob-update-behavior
 0
 1
-0.7
+1
 0.01
 1
 NIL
@@ -861,7 +908,7 @@ Initial-weighting-history
 Initial-weighting-history
 0
 1
-0.04
+0.2
 0.01
 1
 NIL
@@ -876,7 +923,7 @@ Initial-like-to-move
 Initial-like-to-move
 0
 1
-0.05
+0.09
 0.01
 1
 NIL
@@ -888,12 +935,12 @@ PLOT
 930
 386
 distribution theta
-1/theta
+age
 NIL
-1.0
-5.0
 0.0
-500.0
+10.0
+0.0
+650.0
 true
 true
 PENS
@@ -901,21 +948,22 @@ PENS
 "theta_2" 1.0 0 -13840069 true
 
 PLOT
-575
-394
-926
-529
-distribution lambda
-lambda
+935
+260
+1286
+385
+distribution alpha
 NIL
+count
+0.0
+100.0
 0.0
 1.0
-0.0
-500.0
 true
-false
+true
 PENS
-"default" 1.0 0 -16777216 true
+"alpha" 1.0 0 -13345367 true
+"mu" 1.0 0 -2674135 true
 
 PLOT
 571
@@ -928,7 +976,7 @@ NIL
 1.0
 100.0
 0.0
-1.0
+0.1
 true
 false
 PENS
@@ -965,7 +1013,60 @@ CHOOSER
 timescale
 timescale
 "months" "years"
+1
+
+SLIDER
+185
+460
+357
+493
+influence
+influence
 0
+1
+1
+0.01
+1
+NIL
+HORIZONTAL
+
+PLOT
+995
+10
+1270
+130
+age_track
+NIL
+NIL
+0.0
+100.0
+0.0
+0.3
+true
+false
+PENS
+"theta_1" 1.0 0 -2674135 true
+"theta_2" 1.0 0 -10899396 true
+
+PLOT
+995
+130
+1270
+255
+rule_track
+NIL
+NIL
+0.0
+100.0
+0.8
+0.1
+true
+false
+PENS
+"maxi" 1.0 0 -2674135 true
+"mini" 1.0 0 -10899396 true
+"conf" 1.0 0 -13345367 true
+"anti" 1.0 0 -16777216 true
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -1342,6 +1443,57 @@ NetLogo 4.1.3
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="influence_test" repetitions="2" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="100"/>
+    <metric>mean [theta_1] of turtles</metric>
+    <metric>mean [theta_2] of turtles</metric>
+    <enumeratedValueSet variable="Initial-weighting-history">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="replacement?">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="density">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Transcription-error">
+      <value value="0.05"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="conflict?">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="timescale">
+      <value value="&quot;years&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="random-init">
+      <value value="false"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="influence">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="inicoop">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Initial-like-to-move">
+      <value value="0"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Initial-prob-update-rule">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="strength-of-dilemma">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Initial-prob-update-behavior">
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Counterfactual-reflection?">
+      <value value="false"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 VIEW
 55
@@ -1378,5 +1530,5 @@ Line -7500403 true 150 150 90 180
 Line -7500403 true 150 150 210 180
 
 @#$#@#$#@
-0
+1
 @#$#@#$#@
