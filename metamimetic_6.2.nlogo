@@ -322,7 +322,7 @@ to establish-color  ;; agent procedure
   if rule = 4  
     [set color white
       ]
-  ifelse cooperate? [set size 1][set size 0.7]  
+  ;ifelse cooperate? [set size 1][set size 0.7]  
 end
 to replace  
     ifelse random-float 1.0 < 0.5 [set cooperate? true][set cooperate? false]        
@@ -541,8 +541,8 @@ end
 to copy-strategy [temp-agent]
   
       set rule [rule] of temp-agent
-      if random-float 1 < Transcription-error [set rule one-of [rule] of turtles-on neighbors]
-       
+      ;if random-float 1 < Transcription-error [set rule one-of [rule] of turtles-on neighbors]
+       if random-float 1 < Transcription-error [set rule random 4 + 1] 
       let theta_1T theta_1
       set theta_1 [theta_1] of temp-agent
       set theta_1 add-noise "theta_1" Transcription-error
@@ -589,12 +589,14 @@ to select-behavior  ;; patch procedure
 end
 to move-agent
   ifelse conflict?
-  [ if any? turtles-on neighbors
-    [
+  [     
+      ifelse any? turtles-on neighbors
+      [
       let target one-of other best-elements
       if target = nobody [set target one-of turtles-on neighbors]
       ifelse random-float 1 < (1 - satisfaction)*(1 - [satisfaction] of target) [interchange-agents target][move-to-empty]
-    ]
+      ]
+      [move-to-empty]
     ]
   [move-to-empty]
 end
@@ -670,13 +672,13 @@ end
 to plot-rule-theta
   set-current-plot "rule_track"
   set-current-plot-pen "maxi"
-  plot abs (mean [theta_1] of turtles with [rule = 1] - mean [theta_2] of turtles with [rule = 1])
+  plot mean [theta_2] of turtles with [rule = 1] / mean [theta_1] of turtles with [rule = 1]
  set-current-plot-pen "mini"
-  plot abs(mean [theta_1] of turtles with [rule = 2] - mean [theta_2] of turtles with [rule = 2])
+  plot mean [theta_2] of turtles with [rule = 2] / mean [theta_1] of turtles with [rule = 2]
  set-current-plot-pen "conf"
-  plot abs(mean [theta_1] of turtles with [rule = 3] - mean [theta_2] of turtles with [rule = 3])
+  plot mean [theta_2] of turtles with [rule = 3] / mean [theta_1] of turtles with [rule = 3]
  set-current-plot-pen "anti"
-  plot abs(mean [theta_1] of turtles with [rule = 4] - mean [theta_2] of turtles with [rule = 4])
+  plot mean [theta_2] of turtles with [rule = 4] / mean [theta_1] of turtles with [rule = 4]
 
 end
 @#$#@#$#@
@@ -811,7 +813,7 @@ inicoop
 inicoop
 0
 100
-0
+50
 1
 1
 NIL
@@ -826,7 +828,7 @@ density
 density
 0
 1
-1
+0.94
 0.01
 1
 NIL
@@ -869,7 +871,7 @@ SWITCH
 387
 random-init
 random-init
-1
+0
 1
 -1000
 
@@ -908,7 +910,7 @@ Initial-weighting-history
 Initial-weighting-history
 0
 1
-0.2
+0
 0.01
 1
 NIL
@@ -923,7 +925,7 @@ Initial-like-to-move
 Initial-like-to-move
 0
 1
-0.09
+0
 0.01
 1
 NIL
@@ -990,7 +992,7 @@ SWITCH
 458
 conflict?
 conflict?
-1
+0
 1
 -1000
 
