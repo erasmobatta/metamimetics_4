@@ -7,8 +7,8 @@ globals [
   conf
   anti
   life-distribution
-  
-  
+  rate-theta
+  conflict-rate
   ]
 
 turtles-own [
@@ -27,7 +27,8 @@ turtles-own [
  
   theta_1
   theta_2
-  prob-reflexion?
+  prob-reflexion
+  prob-conflict
   weighting-history
   likelihood-to-move
   
@@ -64,9 +65,9 @@ to setup
       
   ]
   stabilization
-  ask turtles[ establish-color ]
+  update-views
   init-age-USA2007
-  ifelse timescale = "months" [set-life-distribution-USA2007-months][set-life-distribution-USA2007] 
+  ifelse timescale [set-life-distribution-USA2007-months][set-life-distribution-USA2007] 
   set-outputs
   
   reset-ticks
@@ -77,18 +78,13 @@ to go
     learning-stage
     ask turtles [calculate-satisfaction]
     moving-stage
-    
     set-outputs            
     do-plots
     reset-decisions 
     if replacement? [replacement]
     update-views
-  ask turtles [
-    ifelse am-i-the-best? [set shape "face happy"][set shape "face sad"]
-    ]  
-  
-  update-views
     tick
+    if ticks = 7000 [stop]
 end
 to learning-stage
     ask turtles [ 
@@ -225,21 +221,6 @@ to reset-decisions
   set behavior? false
   ] 
 end   
-to replacement-test
-     let gap 1
-     if timescale = "months" [set gap 12]  
-  ask turtles [
-       
-     let x floor age / gap 
-     if x > 119 [set x 119]
-     let prob-death item x life-distribution
-     if timescale = "months" 
-     [
-     set prob-death prob-death / 12
-     ]
-     ifelse  random-float 1  < prob-death [replace][set age age + 1]
-  ]
-end
 to replacement  
   ask turtles [
        
@@ -267,6 +248,8 @@ to set-outputs
   set mini count turtles with [rule = 2] / count turtles
   set conf count turtles with [rule = 3] / count turtles
   set anti count turtles with [rule = 4] / count turtles
+  set rate-theta mean [theta_2] of turtles / mean [theta_1] of turtles
+  
 end
 to do-plots
   set-current-plot "cooperation"
@@ -290,24 +273,19 @@ to do-plots
   set-histogram-num-bars 100
   histogram [1 / theta_1] of turtles
   
-  ;histogram [age] of turtles
    set-current-plot-pen "theta_2"
   set-histogram-num-bars 1000
   histogram [1 / theta_2] of turtles 
   set-current-plot "distribution alpha"
   set-current-plot-pen "alpha"
-  ;set-histogram-num-bars 1000
-  ;histogram [weighting-history] of turtles
-  plot mean [weighting-history] of turtles
+    plot mean [weighting-history] of turtles
   set-current-plot-pen "mu"
-  ; set-histogram-num-bars 1000
-  ;histogram  [likelihood-to-move] of turtles
-   plot mean [likelihood-to-move] of turtles
+    plot mean [likelihood-to-move] of turtles
   set-current-plot "track"
   set-current-plot-pen "pen1"
   plot mean [theta_1] of turtles
   set-current-plot-pen "pen2"
-  plot mean [theta_2] of turtles
+  plot mean [theta_2] of turtles 
   plot-age-hist
   plot-rule-theta
  
@@ -315,7 +293,11 @@ to do-plots
   
 end
 to update-views
-  ask turtles [establish-color]
+  ask turtles [
+    establish-color
+    ifelse am-i-the-best? [set shape "face happy"][set shape "face sad"]
+    ]
+      
  end
 
 to establish-color  ;; agent procedure
@@ -346,8 +328,9 @@ to replace
     set weighting-history random-float 1.0
     set likelihood-to-move random-float 1.0
     ]
+    
     set rule (random 4) + 1
-    ;move-to one-of patches with [not any? turtles-here]
+    
 end
 to init-age-USA2010
   let census-dist (list 0.0654 0.0659 0.0670 0.0714 0.0699 0.0683 0.0647 0.0654 0.0677 0.0735 0.0722 0.0637 0.0545 0.0403 0.0301 0.0237 0.0186 0.0117 0.0047 0.0012 0.0002)
@@ -356,7 +339,7 @@ to init-age-USA2010
     let temp-init random 21
     while [random-float 1 > item temp-init census-dist][set temp-init random 21]
     set age (temp-init * 5) + random 5
-    if timescale = "months" [ set age age * 12 + random 12]
+    if timescale [ set age age * 12 + random 12]
     ]
     
 end
@@ -367,7 +350,7 @@ to init-age-USA2007
     let temp-init random 18
     while [random-float 1 > item temp-init census-dist][set temp-init random 18]
     set age (temp-init * 5) + random 5
-    if timescale = "months" [ set age age * 8 + random 8]
+    if timescale [ set age age * 8 + random 8]
     ]
     
 end
@@ -609,7 +592,7 @@ to move-agent
       [
       let target one-of other best-elements
       if target = nobody [set target one-of turtles-on neighbors]
-      ifelse random-float 1 < (1 - satisfaction)*(1 - [satisfaction] of target) [interchange-agents target][move-to-empty]
+      ifelse random-float 1 < 0.05 + 0.9 * (1 - satisfaction)*(1 - [satisfaction] of target) [interchange-agents target][move-to-empty]
       ]
       [move-to-empty]
     ]
@@ -632,7 +615,7 @@ to-report age-histogram2
   let mylist []
   let i 0
   let gap 1
-  if timescale = "months" [set gap 12]
+  if timescale [set gap 12]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -647,7 +630,7 @@ to-report age-histogram1
   let mylist []
   let i 0
   let gap 1
-  if timescale = "months" [set gap 12]
+  if timescale [set gap 12]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -662,7 +645,7 @@ to-report age-influence
   let mylist []
   let i 0
   let gap 1
-  if timescale = "months" [set gap 12]
+  if timescale [set gap 12]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -677,7 +660,7 @@ to-report age-diversity1
   let mylist []
   let i 0
   let gap 1
-  if timescale = "months" [set gap 12]
+  if timescale [set gap 12]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -692,7 +675,7 @@ to-report age-diversity2
   let mylist []
   let i 0
   let gap 1
-  if timescale = "months" [set gap 12]
+  if timescale [set gap 12]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -717,13 +700,17 @@ end
 to plot-rule-theta
   set-current-plot "rule_track"
   set-current-plot-pen "maxi"
-  plot mean [theta_2] of turtles with [rule = 1] / mean [theta_1] of turtles with [rule = 1]
+  ;plot mean [theta_2] of turtles with [rule = 1] / mean [theta_1] of turtles with [rule = 1]
+  plot mean [satisfaction] of turtles with [rule = 1]
  set-current-plot-pen "mini"
-  plot mean [theta_2] of turtles with [rule = 2] / mean [theta_1] of turtles with [rule = 2]
+  ;plot mean [theta_2] of turtles with [rule = 2] / mean [theta_1] of turtles with [rule = 2]
+  plot mean [satisfaction] of turtles with [rule = 2]
  set-current-plot-pen "conf"
-  plot mean [theta_2] of turtles with [rule = 3] / mean [theta_1] of turtles with [rule = 3]
+  ;plot mean [theta_2] of turtles with [rule = 3] / mean [theta_1] of turtles with [rule = 3]
+  plot mean [satisfaction] of turtles with [rule = 3]
  set-current-plot-pen "anti"
-  plot mean [theta_2] of turtles with [rule = 4] / mean [theta_1] of turtles with [rule = 4]
+  ;plot mean [theta_2] of turtles with [rule = 4] / mean [theta_1] of turtles with [rule = 4]
+  plot mean [satisfaction] of turtles with [rule = 4]
 
 end
 @#$#@#$#@
@@ -804,7 +791,7 @@ strength-of-dilemma
 strength-of-dilemma
 0
 0.5
-0.4
+0.43
 0.01
 1
 NIL
@@ -871,7 +858,7 @@ SLIDER
 78
 density
 density
-0
+0.1
 1
 1
 0.01
@@ -888,7 +875,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.05
+0.08
 0.01
 1
 NIL
@@ -916,7 +903,7 @@ SWITCH
 387
 random-init
 random-init
-0
+1
 1
 -1000
 
@@ -1052,16 +1039,6 @@ replacement?
 1
 -1000
 
-CHOOSER
-233
-385
-371
-430
-timescale
-timescale
-"months" "years"
-0
-
 SLIDER
 185
 460
@@ -1071,7 +1048,7 @@ influence
 influence
 0
 1
-0.52
+1
 0.01
 1
 NIL
@@ -1114,6 +1091,17 @@ PENS
 "mini" 1.0 0 -10899396 true
 "conf" 1.0 0 -13345367 true
 "anti" 1.0 0 -16777216 true
+
+SWITCH
+235
+385
+357
+418
+timescale
+timescale
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
