@@ -321,14 +321,14 @@ to replace
     set rule? false
     set behavior? false
     set move? false
-    if random-init
+    if random-init or not any? turtles-on neighbors
     [
     set theta_1 random-float 1.0
     set theta_2 random-float 1.0
     set weighting-history random-float 1.0
     set likelihood-to-move random-float 1.0
     ]
-    
+        
     set rule (random 4) + 1
     
 end
@@ -539,7 +539,7 @@ end
 to copy-strategy [temp-agent]
   
       set rule [rule] of temp-agent
-      if random-float 1 < 0.1 [set rule one-of [rule] of turtles-on neighbors]
+      if random-float 1 < 0.01 [set rule one-of [rule] of turtles-on neighbors]
         
       let theta_1T theta_1
       set theta_1 [theta_1] of temp-agent
@@ -687,8 +687,8 @@ to-report age-diversity2
   report mylist
 end
 to plot-age-hist
-  let hist2 age-diversity2
-  let hist1 age-diversity1
+  let hist2 age-histogram2
+  let hist1 age-histogram1
   set-current-plot "age_track"
   set-current-plot-pen "theta_1"
   plot-pen-reset
@@ -875,7 +875,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.08
+0.05
 0.01
 1
 NIL
@@ -1048,7 +1048,7 @@ influence
 influence
 0
 1
-1
+0.87
 0.01
 1
 NIL
