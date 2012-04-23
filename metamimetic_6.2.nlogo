@@ -6,6 +6,10 @@ globals [
   mini
   conf
   anti
+  best-maxi
+  best-mini
+  best-conf
+  best-anti  
   life-distribution
   rate-theta
   conflict-rate
@@ -261,7 +265,11 @@ to set-outputs
   set conf count turtles with [rule = 3] / count turtles
   set anti count turtles with [rule = 4] / count turtles
   set rate-theta mean [theta_2] of turtles / mean [theta_1] of turtles
-  
+  set conflict-rate count turtles with [conflict?] * (1 / fraction-best) / count turtles
+  set best-maxi [score] of max-one-of turtles with [rule = 1] [score]
+  set best-mini [score] of min-one-of turtles with [rule = 2] [score]
+  set best-conf [count turtles-on neighbors] of max-one-of turtles with [rule = 3] [count turtles-on neighbors]
+  set best-anti [count turtles-on neighbors] of min-one-of turtles with [rule = 4] [count turtles-on neighbors] 
 end
 to do-plots
   set-current-plot "cooperation"
@@ -293,11 +301,13 @@ to do-plots
     plot mean [weighting-history] of turtles
   set-current-plot-pen "mu"
     plot mean [likelihood-to-move] of turtles
+  set-current-plot-pen "conf"
+    plot mean [prob-conflict] of turtles  
   set-current-plot "track"
   set-current-plot-pen "pen1"
-  plot mean [prob-conflict] of turtles 
+  plot mean [theta_2] of turtles 
   set-current-plot-pen "pen2" 
-  plot mean [prob-conflict] of turtles with [rule = 1] 
+  plot mean [theta_1] of turtles  
   plot-age-hist
   plot-rule-theta
  
@@ -333,7 +343,7 @@ to replace
     set rule? false
     set behavior? false
     set move? false
-    ifelse random-init
+    if random-init
     [
     set theta_1 random-float 1.0
     set theta_2 random-float 1.0
@@ -341,13 +351,7 @@ to replace
     set likelihood-to-move random-float 1.0
     set prob-conflict random-float 1.0
     ]
-    [
-     set theta_1 Initial-prob-update-behavior
-      set theta_2 Initial-prob-update-rule
-      set weighting-history Initial-weighting-history
-      set likelihood-to-move Initial-like-to-move 
-      set prob-conflict Initial-prob-conflict
-      ]
+   
     set rule (random 4) + 1
     ;move-to one-of patches with [not any? turtles-here]
 end
@@ -883,7 +887,7 @@ density
 density
 0.1
 1
-0.94
+1
 0.01
 1
 NIL
@@ -926,7 +930,7 @@ SWITCH
 443
 random-init
 random-init
-1
+0
 1
 -1000
 
@@ -981,7 +985,7 @@ PLOT
 930
 386
 distribution theta
-age
+1 / theta
 NIL
 0.0
 10.0
@@ -992,6 +996,7 @@ true
 PENS
 "theta_1" 1.0 0 -2674135 true
 "theta_2" 1.0 0 -13840069 true
+"pf" 1.0 0 -16777216 true
 
 PLOT
 935
@@ -1010,6 +1015,7 @@ true
 PENS
 "alpha" 1.0 0 -13345367 true
 "mu" 1.0 0 -2674135 true
+"conf" 1.0 0 -16777216 true
 
 PLOT
 571
@@ -1049,7 +1055,7 @@ influence
 influence
 0
 1
-1
+0.99
 0.01
 1
 NIL
@@ -1100,7 +1106,7 @@ SWITCH
 443
 timescale
 timescale
-1
+0
 1
 -1000
 
