@@ -1,6 +1,7 @@
 globals [
   cooperation-rate
   satisfaction-rate
+  abs-sat-rate
   fraction-best
   
   mean-score
@@ -36,6 +37,7 @@ turtles-own [
   last-score
   inst-score
   satisfaction
+  abs-satisfaction
   age
   
   rule?
@@ -127,17 +129,19 @@ to calculate-satisfaction
     [
       let top [score] of max-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1
+      [set satisfaction 1.0]
       [set satisfaction (score - bottom) / (top - bottom)]
+      set abs-satisfaction score / (8 * (1 - strength-of-dilemma ))
       ]
     if rule = 2
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction ((-1 * score) - bottom) / (top - bottom)]  
+      set abs-satisfaction ((-1 * score) + 8 * (1 - strength-of-dilemma )) / (-8 * (1 - strength-of-dilemma ))
       ]
     if rule = 3
     [
@@ -147,10 +151,10 @@ to calculate-satisfaction
       let bottom count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]  
-      
+      set abs-satisfaction my-group / 8
       ]
     if rule = 4
     [
@@ -160,10 +164,10 @@ to calculate-satisfaction
       let top -1 * count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group -1 * count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]    
-      
+      set abs-satisfaction my-group / (-8)
       ]
     if not any? (turtles-on neighbors) [set satisfaction 0]
 end
@@ -283,7 +287,7 @@ to set-outputs
     set mean-mu mean [likelihood-to-move] of turtles
     ;set mean-pc mean [prob-conflict] of turtles
     
-    set reflection-rate count turtles with [reflect?] / (count turtles with [move? or behavior? or (rule? and not reflect?)] + 1)
+    set reflection-rate count turtles with [reflect?] / (count turtles * (1 - fraction-best))
      
   set maxi count turtles with [rule = 1] / count turtles
   set mini count turtles with [rule = 2] / count turtles
@@ -1089,7 +1093,7 @@ influence
 influence
 0
 1
-0.82
+1
 0.01
 1
 NIL
