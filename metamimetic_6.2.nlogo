@@ -11,7 +11,7 @@ globals [
   mean-mu
   mean-pc
   
-  conflict-rate
+  reflection-rate
    
   maxi
   mini
@@ -41,13 +41,13 @@ turtles-own [
   rule?
   behavior?
   move?
-  conflict?
-  ;reflect?
+  ;conflict?
+  reflect?
  
   theta_1
   theta_2
-  ;prob-reflection
-  prob-conflict
+  prob-reflection
+  ;prob-conflict
   weighting-history
   likelihood-to-move
   
@@ -69,23 +69,23 @@ to setup
       set rule? false
       set behavior? false
       set move? false
-      set conflict? false
-      ;set reflect? false
+      ;set conflict? false
+      set reflect? false
       ifelse random-init [
       set theta_1 random-float 1.0
       set theta_2 random-float 1.0
       set weighting-history random-float 1.0   
       set likelihood-to-move random-float 1.0
-     ; set prob-reflection random-float 1.0
-      set prob-conflict random-float 1.0
+      set prob-reflection random-float 1.0
+     ; set prob-conflict random-float 1.0
         ]  
       [
       set theta_1 Initial-prob-update-behavior
       set theta_2 Initial-prob-update-rule
       set weighting-history Initial-weighting-history
       set likelihood-to-move Initial-like-to-move 
-      ;set prob-reflection Initial-prob-reflection
-      set prob-conflict Initial-prob-conflict
+      set prob-reflection Initial-prob-reflection
+      ;set prob-conflict Initial-prob-conflict
       ]
       
   ]
@@ -222,17 +222,21 @@ to decision-stage
    ifelse random-float 1 < likelihood-to-move
    [if not am-i-the-best? [
        set move? true
-    if random-float 1.0 < prob-conflict [set conflict? true]
+    ;if random-float 1.0 < prob-conflict [set conflict? true]
    ] 
      ]
    [ 
    ifelse random-float 1 < theta_2 
-   [if not am-i-the-best? and not is-my-rule-the-best? [set rule? true]]
+   [if not am-i-the-best? and not is-my-rule-the-best? 
+     [
+       set rule? true
+       if random-float 1.0 < prob-reflection [set reflect? true]
+       ]]
    [if random-float 1 < theta_1 and not am-i-the-best? [set behavior? true]]
    ]
    ]
    ask turtles [
-     if move? and not conflict? and all? neighbors [any? turtles-here] [set conflict? true ]
+     if move? and not conflict? and all? neighbors [any? turtles-here] [ifelse is-my-rule-the-best? [set behavior? true][set rule? true]]
      if not move? and all? neighbors [not any? turtles-here]
      [
       set move? true  
@@ -277,9 +281,9 @@ to set-outputs
     set mean-theta2 mean [theta_2] of turtles
     set mean-alpha mean [weighting-history] of turtles
     set mean-mu mean [likelihood-to-move] of turtles
-    set mean-pc mean [prob-conflict] of turtles
+    ;set mean-pc mean [prob-conflict] of turtles
     
-    set conflict-rate count turtles with [conflict?] / (count turtles with [rule? or behavior? or (move? and not conflict?)] + 1)
+    set reflection-rate count turtles with [reflect?] / (count turtles with [move? or behavior? or (rule? and not reflect?)] + 1)
      
   set maxi count turtles with [rule = 1] / count turtles
   set mini count turtles with [rule = 2] / count turtles
@@ -328,7 +332,7 @@ to do-plots
   set-current-plot-pen "mu"
     plot mean [likelihood-to-move] of turtles
   set-current-plot-pen "fight"
-    plot conflict-rate
+    plot reflection-rate
       
   set-current-plot "track"
   set-current-plot-pen "pen1"
@@ -379,7 +383,7 @@ to replace
     set theta_2 random-float 1.0
     set weighting-history random-float 1.0
     set likelihood-to-move random-float 1.0
-    set prob-conflict random-float 1.0
+    set prob-reflection random-float 1.0
     ]
    
     set rule (random 4) + 1
@@ -614,10 +618,10 @@ to copy-strategy [temp-agent]
       set likelihood-to-move add-noise "likelihood-to-move" Transcription-error 
       set likelihood-to-move likelihood-to-moveT * (1 - influence) + likelihood-to-move * influence 
      
-     let prob-conflictT prob-conflict
-      set prob-conflict [prob-conflict] of temp-agent 
-      set prob-conflict add-noise "prob-conflict" Transcription-error 
-      set prob-conflict prob-conflictT * (1 - influence) + prob-conflict * influence
+     let prob-reflectionT prob-reflection
+      set prob-reflection [prob-reflection] of temp-agent 
+      set prob-reflection add-noise "prob-reflection" Transcription-error 
+      set prob-reflection prob-reflectionT * (1 - influence) + prob-reflection * influence
 end
 to-report add-noise [value noise-std]
       let epsilon random-normal 0.0 noise-std * 100
@@ -916,7 +920,7 @@ density
 density
 0.1
 1
-1
+0.98
 0.01
 1
 NIL
@@ -1085,7 +1089,7 @@ influence
 influence
 0
 1
-0.83
+0.82
 0.01
 1
 NIL
@@ -1136,7 +1140,7 @@ SWITCH
 443
 timescale
 timescale
-1
+0
 1
 -1000
 
@@ -1145,8 +1149,8 @@ SLIDER
 335
 215
 368
-Initial-prob-conflict
-Initial-prob-conflict
+Initial-prob-reflection
+Initial-prob-reflection
 0
 1
 0.5
@@ -1158,10 +1162,10 @@ HORIZONTAL
 SWITCH
 165
 450
-272
+277
 483
-reflect?
-reflect?
+conflict?
+conflict?
 1
 1
 -1000
