@@ -127,16 +127,16 @@ to calculate-satisfaction
     [
       let top [score] of max-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction (score - bottom) / (top - bottom)]
       ]
     if rule = 2
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction ((-1 * score) - bottom) / (top - bottom)]  
       ]
     if rule = 3
@@ -147,8 +147,8 @@ to calculate-satisfaction
       let bottom count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]  
       
       ]
@@ -160,8 +160,8 @@ to calculate-satisfaction
       let top -1 * count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group -1 * count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 0.1 
+      [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]    
       
       ]
@@ -341,8 +341,6 @@ to do-plots
   plot-age-hist
   plot-rule-theta
  
- 
-  
 end
 to update-views
   ask turtles [
@@ -901,7 +899,7 @@ inicoop
 inicoop
 0
 100
-39
+64
 1
 1
 NIL
@@ -916,7 +914,7 @@ density
 density
 0.1
 1
-1
+0.96
 0.01
 1
 NIL
@@ -931,7 +929,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.07
+0.06
 0.01
 1
 NIL
@@ -959,7 +957,7 @@ SWITCH
 443
 random-init
 random-init
-0
+1
 1
 -1000
 
@@ -1085,7 +1083,7 @@ influence
 influence
 0
 1
-0.83
+0.95
 0.01
 1
 NIL
@@ -1136,7 +1134,7 @@ SWITCH
 443
 timescale
 timescale
-1
+0
 1
 -1000
 
