@@ -2,17 +2,30 @@ globals [
   cooperation-rate
   satisfaction-rate
   fraction-best
+  
+  mean-score
+  mean-connectivity
+  mean-theta1
+  mean-theta2
+  mean-alpha
+  mean-mu
+  mean-pc
+  
+  conflict-rate
+   
   maxi
   mini
   conf
   anti
+  
   best-maxi
   best-mini
   best-conf
-  best-anti  
+  best-anti
+    
   life-distribution
+  
   rate-theta
-  conflict-rate
   ]
 
 turtles-own [
@@ -238,11 +251,9 @@ to reset-decisions
   ] 
 end   
 to replacement  
-  ask turtles [
-       
+  ask turtles [  
      let x age  
      if x >= length life-distribution [set x length life-distribution - 1]
-     
      ifelse  random-float 1  < item x life-distribution [replace][set age age + 1]
   ]
 end    
@@ -253,19 +264,29 @@ to stabilization
   ask turtles [select-behavior]    
   ]
     repeat 10 [ask turtles[select-rule]]
-   ; set reflect? false
+   ;set reflect? false
     
 end
 to set-outputs
     set cooperation-rate count turtles with [cooperate?] / count turtles
     set fraction-best count turtles with [shape = "face happy"]/ count turtles
     set satisfaction-rate mean [satisfaction] of turtles
+    set mean-score mean [score] of turtles
+    set mean-connectivity mean [count turtles-on neighbors] of turtles
+    set mean-theta1 mean [theta_1] of turtles
+    set mean-theta2 mean [theta_2] of turtles
+    set mean-alpha mean [weighting-history] of turtles
+    set mean-mu mean [likelihood-to-move] of turtles
+    set mean-pc mean [prob-conflict] of turtles
+    
+    set conflict-rate count turtles with [conflict?] / (count turtles with [rule? or behavior? or (move? and not conflict?)] + 1)
+     
   set maxi count turtles with [rule = 1] / count turtles
   set mini count turtles with [rule = 2] / count turtles
   set conf count turtles with [rule = 3] / count turtles
   set anti count turtles with [rule = 4] / count turtles
   set rate-theta mean [theta_2] of turtles / mean [theta_1] of turtles
-  set conflict-rate count turtles with [conflict?] * (1 / fraction-best) / count turtles
+  
   set best-maxi [score] of max-one-of turtles with [rule = 1] [score]
   set best-mini [score] of min-one-of turtles with [rule = 2] [score]
   set best-conf [count turtles-on neighbors] of max-one-of turtles with [rule = 3] [count turtles-on neighbors]
@@ -293,21 +314,30 @@ to do-plots
   set-histogram-num-bars 100
   histogram [1 / theta_1] of turtles
   
-   set-current-plot-pen "theta_2"
+  set-current-plot-pen "theta_2"
   set-histogram-num-bars 1000
-  histogram [1 / theta_2] of turtles 
+  histogram [1 / theta_2] of turtles
+ ; set-current-plot-pen "fight"
+ ; set-histogram-num-bars 1000
+ ; histogram [prob-conflict] of turtles
+  
+   
   set-current-plot "distribution alpha"
   set-current-plot-pen "alpha"
     plot mean [weighting-history] of turtles
   set-current-plot-pen "mu"
     plot mean [likelihood-to-move] of turtles
-  set-current-plot-pen "conf"
-    plot mean [prob-conflict] of turtles  
+  set-current-plot-pen "fight"
+    plot conflict-rate
+      
   set-current-plot "track"
   set-current-plot-pen "pen1"
-  plot mean [theta_2] of turtles 
+  plot mean-theta1
   set-current-plot-pen "pen2" 
-  plot mean [theta_1] of turtles  
+  plot mean-theta2
+  ;set-current-plot-pen "pen3" 
+  ;plot conflict-rate
+      
   plot-age-hist
   plot-rule-theta
  
@@ -727,18 +757,17 @@ end
 to plot-rule-theta
   set-current-plot "rule_track"
   set-current-plot-pen "maxi"
-  ;plot mean [theta_2] of turtles with [rule = 1] / mean [theta_1] of turtles with [rule = 1]
   plot mean [satisfaction] of turtles with [rule = 1]
+  ;plot best-maxi
  set-current-plot-pen "mini"
-  ;plot mean [theta_2] of turtles with [rule = 2] / mean [theta_1] of turtles with [rule = 2]
   plot mean [satisfaction] of turtles with [rule = 2]
+   ; plot best-mini
  set-current-plot-pen "conf"
-  ;plot mean [theta_2] of turtles with [rule = 3] / mean [theta_1] of turtles with [rule = 3]
   plot mean [satisfaction] of turtles with [rule = 3]
+   ; plot best-conf
  set-current-plot-pen "anti"
-  ;plot mean [theta_2] of turtles with [rule = 4] / mean [theta_1] of turtles with [rule = 4]
   plot mean [satisfaction] of turtles with [rule = 4]
-
+   ;plot best-anti
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -818,7 +847,7 @@ strength-of-dilemma
 strength-of-dilemma
 0
 0.5
-0.38
+0.42
 0.01
 1
 NIL
@@ -872,7 +901,7 @@ inicoop
 inicoop
 0
 100
-56
+39
 1
 1
 NIL
@@ -902,7 +931,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.05
+0.07
 0.01
 1
 NIL
@@ -973,7 +1002,7 @@ Initial-like-to-move
 Initial-like-to-move
 0
 1
-0.49
+0.51
 0.01
 1
 NIL
@@ -996,7 +1025,7 @@ true
 PENS
 "theta_1" 1.0 0 -2674135 true
 "theta_2" 1.0 0 -13840069 true
-"pf" 1.0 0 -16777216 true
+"fight" 1.0 0 -16777216 true
 
 PLOT
 935
@@ -1015,7 +1044,7 @@ true
 PENS
 "alpha" 1.0 0 -13345367 true
 "mu" 1.0 0 -2674135 true
-"conf" 1.0 0 -16777216 true
+"fight" 1.0 0 -16777216 true
 
 PLOT
 571
@@ -1034,6 +1063,7 @@ false
 PENS
 "pen1" 1.0 0 -2674135 true
 "pen2" 1.0 0 -13345367 true
+"pen3" 1.0 0 -16777216 true
 
 SWITCH
 5
@@ -1055,7 +1085,7 @@ influence
 influence
 0
 1
-0.99
+0.83
 0.01
 1
 NIL
@@ -1106,7 +1136,7 @@ SWITCH
 443
 timescale
 timescale
-0
+1
 1
 -1000
 
