@@ -129,8 +129,8 @@ to calculate-satisfaction
     [
       let top [score] of max-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < 0.1
-      [set satisfaction 1.0]
+      ifelse abs(top - bottom) < 1 / 8
+      [set satisfaction 0]
       [set satisfaction (score - bottom) / (top - bottom)]
       set abs-satisfaction score / (8 * (1 - strength-of-dilemma ))
       ]
@@ -138,7 +138,7 @@ to calculate-satisfaction
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8 
       [set satisfaction 1.0]
       [set satisfaction ((-1 * score) - bottom) / (top - bottom)]  
       set abs-satisfaction ((-1 * score) + 8 * (1 - strength-of-dilemma )) / (-8 * (1 - strength-of-dilemma ))
@@ -151,7 +151,7 @@ to calculate-satisfaction
       let bottom count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8 
       [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]  
       set abs-satisfaction my-group / 8
@@ -164,7 +164,7 @@ to calculate-satisfaction
       let top -1 * count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group -1 * count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8
       [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]    
       set abs-satisfaction my-group / (-8)
@@ -177,16 +177,16 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
     [
       let top [score] of max-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s ([score] of my-turtle - bottom) / (top - bottom)]
       ]
     if [rule] of my-turtle = 2
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s ((-1 * [score] of my-turtle) - bottom) / (top - bottom)]  
       ]
     if [rule] of my-turtle = 3
@@ -197,8 +197,8 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
       let bottom count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = bottom-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)     
       let my-rule [rule] of my-turtle
       let my-group count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = my-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s (my-group - bottom) / (top - bottom)]  
       
       ]
@@ -210,8 +210,8 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
       let top -1 * count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = bottom-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)     
       let my-rule [rule] of my-turtle
       let my-group -1 * count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = my-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s (my-group - bottom) / (top - bottom)]    
       
       ]
@@ -255,7 +255,7 @@ to reset-decisions
   set move? false
   set rule? false
   set behavior? false
-  set conflict? false
+  set reflect? false
   ] 
 end   
 to replacement  
@@ -287,7 +287,7 @@ to set-outputs
     set mean-mu mean [likelihood-to-move] of turtles
     ;set mean-pc mean [prob-conflict] of turtles
     
-    set reflection-rate count turtles with [reflect?] / (count turtles * (1 - fraction-best))
+    set reflection-rate count turtles with [reflect?] /  (count turtles with [(rule? and not reflect?) or behavior? or move?] + 1)
      
   set maxi count turtles with [rule = 1] / count turtles
   set mini count turtles with [rule = 2] / count turtles
@@ -325,7 +325,7 @@ to do-plots
   set-current-plot-pen "theta_2"
   set-histogram-num-bars 1000
   histogram [1 / theta_2] of turtles
- ; set-current-plot-pen "fight"
+ ; set-current-plot-pen "reflect"
  ; set-histogram-num-bars 1000
  ; histogram [prob-conflict] of turtles
   
@@ -335,7 +335,7 @@ to do-plots
     plot mean [weighting-history] of turtles
   set-current-plot-pen "mu"
     plot mean [likelihood-to-move] of turtles
-  set-current-plot-pen "fight"
+  set-current-plot-pen "reflect"
     plot reflection-rate
       
   set-current-plot "track"
@@ -600,7 +600,7 @@ end
 to copy-strategy [temp-agent]
   
       set rule [rule] of temp-agent
-      if random-float 1 < 0.1 [set rule one-of [rule] of turtles-on neighbors]
+      if random-float 1 < 0.01 [set rule one-of [rule] of turtles-on neighbors]
         
       let theta_1T theta_1
       set theta_1 [theta_1] of temp-agent
@@ -924,7 +924,7 @@ density
 density
 0.1
 1
-0.98
+1
 0.01
 1
 NIL
@@ -939,7 +939,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.07
+0.06
 0.01
 1
 NIL
@@ -1033,7 +1033,7 @@ true
 PENS
 "theta_1" 1.0 0 -2674135 true
 "theta_2" 1.0 0 -13840069 true
-"fight" 1.0 0 -16777216 true
+"reflect" 1.0 0 -16777216 true
 
 PLOT
 935
@@ -1052,7 +1052,7 @@ true
 PENS
 "alpha" 1.0 0 -13345367 true
 "mu" 1.0 0 -2674135 true
-"fight" 1.0 0 -16777216 true
+"reflect" 1.0 0 -16777216 true
 
 PLOT
 571
