@@ -914,7 +914,7 @@ density
 density
 0.1
 1
-0.96
+1
 0.01
 1
 NIL
@@ -957,7 +957,7 @@ SWITCH
 443
 random-init
 random-init
-1
+0
 1
 -1000
 
@@ -1083,7 +1083,7 @@ influence
 influence
 0
 1
-0.95
+0.5
 0.01
 1
 NIL
@@ -1134,7 +1134,7 @@ SWITCH
 443
 timescale
 timescale
-0
+1
 1
 -1000
 
