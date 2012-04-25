@@ -102,16 +102,16 @@ to calculate-satisfaction
     [
       let top [score] of max-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set satisfaction 1.0]
       [set satisfaction (score - bottom) / (top - bottom)]
       ]
     if rule = 2
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set satisfaction 1.0]
       [set satisfaction ((-1 * score) - bottom) / (top - bottom)]  
       ]
     if rule = 3
@@ -122,8 +122,8 @@ to calculate-satisfaction
       let bottom count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]  
       
       ]
@@ -135,8 +135,8 @@ to calculate-satisfaction
       let top -1 * count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group -1 * count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set satisfaction 0.5]
+      ifelse abs(top - bottom) < 1 / 8  
+      [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]    
       
       ]
@@ -148,16 +148,16 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
     [
       let top [score] of max-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s ([score] of my-turtle - bottom) / (top - bottom)]
       ]
     if [rule] of my-turtle = 2
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s ((-1 * [score] of my-turtle) - bottom) / (top - bottom)]  
       ]
     if [rule] of my-turtle = 3
@@ -168,8 +168,8 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
       let bottom count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = bottom-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)     
       let my-rule [rule] of my-turtle
       let my-group count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = my-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s (my-group - bottom) / (top - bottom)]  
       
       ]
@@ -181,8 +181,8 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
       let top -1 * count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = bottom-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)     
       let my-rule [rule] of my-turtle
       let my-group -1 * count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = my-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s (my-group - bottom) / (top - bottom)]    
       
       ]
@@ -231,14 +231,14 @@ to replacement
   ]
 end    
 to stabilization
-  ;set counterfactual-reflection? true
     repeat 10 [
   ask turtles [interact]
   ask turtles [select-behavior]    
   ]
-    repeat 10 [ask turtles[select-rule]]
-   ; set counterfactual-reflection? false
-    
+    repeat 10 [ask turtles[
+        if not am-i-the-best? [select-rule]
+        ]]
+       
 end
 to set-outputs
     set cooperation-rate count turtles with [cooperate?] / count turtles
@@ -321,14 +321,12 @@ to replace
     set rule? false
     set behavior? false
     set move? false
-    if random-init or not any? turtles-on neighbors
-    [
+        
     set theta_1 random-float 1.0
     set theta_2 random-float 1.0
     set weighting-history random-float 1.0
     set likelihood-to-move random-float 1.0
-    ]
-        
+            
     set rule (random 4) + 1
     
 end
@@ -339,7 +337,7 @@ to init-age-USA2010
     let temp-init random 21
     while [random-float 1 > item temp-init census-dist][set temp-init random 21]
     set age (temp-init * 5) + random 5
-    if timescale [ set age age * 12 + random 12]
+    if timescale [ set age age * 8 + random 8]
     ]
     
 end
@@ -448,19 +446,13 @@ to-report is-my-rule-the-best? ;; reports true if the agent's rule is used by an
   report test
 end
 to select-rule
-                 ;; the agent changes its rule if every more succesfull neighbor has a different rule (if them exist).
-                 ;; The agent never change his rule nor behavior if is in the set of agents with best performance (according its rule)
-       
-     if not am-i-the-best? 
-     [
-     if not is-my-rule-the-best? [
+                       
        ifelse counterfactual-reflection?
-       [copy-strategy agent-after-reflex]       
+       [copy-strategy agent-after-reflect]       
        [copy-strategy (one-of best-elements)]
-       ]
-     ] 
+       
 end
-to-report agent-after-reflex
+to-report agent-after-reflect
   let test-agent self
   let test-score score
   
@@ -481,21 +473,21 @@ to-report agent-after-reflex
         set test-score temp-score
         ]
       ]
-      ]
+    ]
     if rule = 3 [
-      let test-rule one-of majority-rules
+      let test-rule 3
       foreach majority-rules [
         if count (turtles-on neighbors) with [rule = test-rule] < count (turtles-on neighbors) with [rule = ?] [set test-rule ?]
         ]
-      set test-agent one-of (turtles-on neighbors) with [rule = test-rule]
+      if test-rule != 3 [set test-agent one-of (turtles-on neighbors) with [rule = test-rule]]
       ]  
     if rule = 4 [
      
-      let test-rule one-of minority-rules
+      let test-rule 4
       foreach minority-rules [
         if count (turtles-on neighbors) with [rule = test-rule] > count (turtles-on neighbors) with [rule = ?] [set test-rule ?]
         ]
-      set test-agent one-of (turtles-on neighbors) with [rule = test-rule]
+      if test-rule != 4 [set test-agent one-of (turtles-on neighbors) with [rule = test-rule]]
       
     ]  
   report test-agent
@@ -615,7 +607,7 @@ to-report age-histogram2
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -630,7 +622,7 @@ to-report age-histogram1
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -645,7 +637,7 @@ to-report age-influence
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -660,12 +652,12 @@ to-report age-diversity1
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
     ifelse any? turtles with [age >= i and age < i + gap]
-    [set mylist lput (length remove-duplicates [theta_1] of turtles with [age >= i and age < i + gap]) mylist]
+    [set mylist lput (count turtles with [age >= i and age < i + gap]) mylist]
     [set mylist lput 0 mylist]
     set i i + 1
     ]
@@ -675,7 +667,7 @@ to-report age-diversity2
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -687,8 +679,8 @@ to-report age-diversity2
   report mylist
 end
 to plot-age-hist
-  let hist2 age-histogram2
-  let hist1 age-histogram1
+  let hist2 age-diversity2
+  let hist1 age-diversity1
   set-current-plot "age_track"
   set-current-plot-pen "theta_1"
   plot-pen-reset
@@ -791,7 +783,7 @@ strength-of-dilemma
 strength-of-dilemma
 0
 0.5
-0.43
+0.11
 0.01
 1
 NIL
@@ -845,7 +837,7 @@ inicoop
 inicoop
 0
 100
-50
+49
 1
 1
 NIL
@@ -860,7 +852,7 @@ density
 density
 0.1
 1
-1
+0.46
 0.01
 1
 NIL
@@ -875,7 +867,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.05
+0.08
 0.01
 1
 NIL
@@ -903,7 +895,7 @@ SWITCH
 387
 random-init
 random-init
-1
+0
 1
 -1000
 
@@ -972,7 +964,7 @@ distribution theta
 age
 NIL
 0.0
-10.0
+120.0
 0.0
 650.0
 true
@@ -1048,7 +1040,7 @@ influence
 influence
 0
 1
-0.87
+0.94
 0.01
 1
 NIL
@@ -1099,7 +1091,7 @@ SWITCH
 418
 timescale
 timescale
-1
+0
 1
 -1000
 
