@@ -130,9 +130,9 @@ to calculate-satisfaction
       let top [score] of max-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on neighbors self) [score]
       ifelse abs(top - bottom) < 1 / 8
-      [set satisfaction 0]
+      [set satisfaction 1.0]
       [set satisfaction (score - bottom) / (top - bottom)]
-      set abs-satisfaction score / (8 * (1 - strength-of-dilemma ))
+      ;set abs-satisfaction score / (8 * (1 - strength-of-dilemma ))
       ]
     if rule = 2
     [
@@ -141,7 +141,7 @@ to calculate-satisfaction
       ifelse abs(top - bottom) < 1 / 8 
       [set satisfaction 1.0]
       [set satisfaction ((-1 * score) - bottom) / (top - bottom)]  
-      set abs-satisfaction ((-1 * score) + 8 * (1 - strength-of-dilemma )) / (-8 * (1 - strength-of-dilemma ))
+      ;set abs-satisfaction ((-1 * score) + 8 * (1 - strength-of-dilemma )) / (-8 * (1 - strength-of-dilemma ))
       ]
     if rule = 3
     [
@@ -154,7 +154,7 @@ to calculate-satisfaction
       ifelse abs(top - bottom) < 1 / 8 
       [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]  
-      set abs-satisfaction my-group / 8
+      ;set abs-satisfaction my-group / 8
       ]
     if rule = 4
     [
@@ -167,7 +167,7 @@ to calculate-satisfaction
       ifelse abs(top - bottom) < 1 / 8
       [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]    
-      set abs-satisfaction my-group / (-8)
+      ;set abs-satisfaction my-group / (-8)
       ]
     if not any? (turtles-on neighbors) [set satisfaction 0]
 end
@@ -226,7 +226,6 @@ to decision-stage
    ifelse random-float 1 < likelihood-to-move
    [if not am-i-the-best? [
        set move? true
-    ;if random-float 1.0 < prob-conflict [set conflict? true]
    ] 
      ]
    [ 
@@ -266,13 +265,13 @@ to replacement
   ]
 end    
 to stabilization
-  ;set reflect? true
+  
     repeat 10 [
   ask turtles [interact]
   ask turtles [select-behavior]    
   ]
     repeat 10 [ask turtles[select-rule]]
-   ;set reflect? false
+ 
     
 end
 to set-outputs
@@ -287,7 +286,7 @@ to set-outputs
     set mean-mu mean [likelihood-to-move] of turtles
     ;set mean-pc mean [prob-conflict] of turtles
     
-    set reflection-rate count turtles with [reflect?] /  (count turtles with [(rule? and not reflect?) or behavior? or move?] + 1)
+    set reflection-rate count turtles with [reflect?] /  (count turtles with [rule? or behavior? or move?] + 1)
      
   set maxi count turtles with [rule = 1] / count turtles
   set mini count turtles with [rule = 2] / count turtles
@@ -388,10 +387,9 @@ to replace
     set weighting-history random-float 1.0
     set likelihood-to-move random-float 1.0
     set prob-reflection random-float 1.0
-    ]
-   
+    ]  
     set rule (random 4) + 1
-    ;move-to one-of patches with [not any? turtles-here]
+    
 end
 to init-age-USA2010
   let census-dist (list 0.0654 0.0659 0.0670 0.0714 0.0699 0.0683 0.0647 0.0654 0.0677 0.0735 0.0722 0.0637 0.0545 0.0403 0.0301 0.0237 0.0186 0.0117 0.0047 0.0012 0.0002)
@@ -400,7 +398,7 @@ to init-age-USA2010
     let temp-init random 21
     while [random-float 1 > item temp-init census-dist][set temp-init random 21]
     set age (temp-init * 5) + random 5
-    if timescale [ set age age * 12 + random 12]
+    if timescale [ set age age * 8 + random 8]
     ]
     
 end
@@ -441,8 +439,6 @@ to interact  ;; calculates the agent's payoff for Prisioner's Dilema. Each agent
   let total-cooperators count (turtles-on neighbors) with [cooperate?]
   set inst-score 0
   ifelse cooperate?
-  ;[set inst-score total-cooperators + 1]
-  ;[set inst-score total-cooperators * strength-of-dilemma]
     [set inst-score total-cooperators * ( 1 - strength-of-dilemma)]                   ;; cooperator gets score of # of neighbors who cooperated
     [set inst-score total-cooperators + (count (turtles-on neighbors) - total-cooperators) * strength-of-dilemma ]  ;; non-cooperator get score of a multiple of the neighbors who cooperated
   set last-score score
@@ -680,7 +676,7 @@ to-report age-histogram2
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -695,7 +691,7 @@ to-report age-histogram1
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -710,7 +706,7 @@ to-report age-influence
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -725,7 +721,7 @@ to-report age-diversity1
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -740,7 +736,7 @@ to-report age-diversity2
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -924,7 +920,7 @@ density
 density
 0.1
 1
-1
+0.82
 0.01
 1
 NIL
@@ -939,7 +935,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.06
+0.05
 0.01
 1
 NIL
@@ -967,7 +963,7 @@ SWITCH
 443
 random-init
 random-init
-0
+1
 1
 -1000
 
@@ -1093,7 +1089,7 @@ influence
 influence
 0
 1
-1
+0.84
 0.01
 1
 NIL
@@ -1170,7 +1166,7 @@ SWITCH
 483
 conflict?
 conflict?
-1
+0
 1
 -1000
 
