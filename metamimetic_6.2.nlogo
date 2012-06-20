@@ -122,12 +122,12 @@ to learning-stage
    ]
     
 end
-to calculate-satisfaction
+to calculate-satisfaction ; lineal function 
     if rule = 1 
     [
       let top [score] of max-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8
       [set satisfaction 1.0]
       [set satisfaction (score - bottom) / (top - bottom)]
       ]
@@ -135,7 +135,7 @@ to calculate-satisfaction
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on neighbors self) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on neighbors self) [score]
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8
       [set satisfaction 1.0]
       [set satisfaction ((-1 * score) - bottom) / (top - bottom)]  
       ]
@@ -147,7 +147,7 @@ to calculate-satisfaction
       let bottom count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8
       [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]  
       
@@ -160,7 +160,7 @@ to calculate-satisfaction
       let top -1 * count (turtle-set turtles-on neighbors self) with [rule = bottom-rule]/ count (turtle-set turtles-on neighbors self)     
       let my-rule rule
       let my-group -1 * count (turtle-set turtles-on neighbors self) with [rule = my-rule]/ count (turtle-set turtles-on neighbors self)      
-      ifelse abs(top - bottom) < 0.1 
+      ifelse abs(top - bottom) < 1 / 8
       [set satisfaction 1.0]
       [set satisfaction (my-group - bottom) / (top - bottom)]    
       
@@ -173,16 +173,16 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
     [
       let top [score] of max-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
       let bottom [score] of min-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s ([score] of my-turtle - bottom) / (top - bottom)]
       ]
     if [rule] of my-turtle = 2
     [
       let top [-1 * score] of min-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
       let bottom [ -1 * score] of max-one-of (turtle-set turtles-on hyp-neighbors my-turtle) [score]
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s ((-1 * [score] of my-turtle) - bottom) / (top - bottom)]  
       ]
     if [rule] of my-turtle = 3
@@ -193,8 +193,8 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
       let bottom count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = bottom-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)     
       let my-rule [rule] of my-turtle
       let my-group count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = my-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s (my-group - bottom) / (top - bottom)]  
       
       ]
@@ -206,8 +206,8 @@ to-report hypothetical-satisfaction [my-turtle hyp-neighbors]
       let top -1 * count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = bottom-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)     
       let my-rule [rule] of my-turtle
       let my-group -1 * count (turtle-set turtles-on hyp-neighbors my-turtle) with [rule = my-rule]/ count (turtle-set turtles-on hyp-neighbors my-turtle)      
-      ifelse abs(top - bottom) < strength-of-dilemma 
-      [set test-h-s 0.5]
+      ifelse abs(top - bottom) < 1 / 8 
+      [set test-h-s 1.0]
       [set test-h-s (my-group - bottom) / (top - bottom)]    
       
       ]
@@ -279,7 +279,7 @@ to set-outputs
     set mean-mu mean [likelihood-to-move] of turtles
     set mean-pc mean [prob-conflict] of turtles
     
-    set conflict-rate count turtles with [conflict?] / (count turtles with [rule? or behavior? or (move? and not conflict?)] + 1)
+    set conflict-rate count turtles with [conflict?] / (count turtles with [move? or rule? or behavior?] + 1)
      
   set maxi count turtles with [rule = 1] / count turtles
   set mini count turtles with [rule = 2] / count turtles
@@ -317,9 +317,9 @@ to do-plots
   set-current-plot-pen "theta_2"
   set-histogram-num-bars 1000
   histogram [1 / theta_2] of turtles
- ; set-current-plot-pen "fight"
- ; set-histogram-num-bars 1000
- ; histogram [prob-conflict] of turtles
+  ;set-current-plot-pen "fight"
+  ;set-histogram-num-bars 1000
+  ;histogram [satisfaction] of turtles
   
    
   set-current-plot "distribution alpha"
@@ -327,7 +327,7 @@ to do-plots
     plot mean [weighting-history] of turtles
   set-current-plot-pen "mu"
     plot mean [likelihood-to-move] of turtles
-  set-current-plot-pen "fight"
+  set-current-plot-pen "conflict"
     plot conflict-rate
       
   set-current-plot "track"
@@ -372,16 +372,15 @@ to replace
     set behavior? false
     set move? false
     if random-init
-    [
+    [    
     set theta_1 random-float 1.0
     set theta_2 random-float 1.0
     set weighting-history random-float 1.0
     set likelihood-to-move random-float 1.0
     set prob-conflict random-float 1.0
-    ]
-   
+    ]   
     set rule (random 4) + 1
-    ;move-to one-of patches with [not any? turtles-here]
+    
 end
 to init-age-USA2010
   let census-dist (list 0.0654 0.0659 0.0670 0.0714 0.0699 0.0683 0.0647 0.0654 0.0677 0.0735 0.0722 0.0637 0.0545 0.0403 0.0301 0.0237 0.0186 0.0117 0.0047 0.0012 0.0002)
@@ -670,7 +669,7 @@ to-report age-histogram2
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -685,7 +684,7 @@ to-report age-histogram1
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -700,7 +699,7 @@ to-report age-influence
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
@@ -715,12 +714,13 @@ to-report age-diversity1
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
     ifelse any? turtles with [age >= i and age < i + gap]
-    [set mylist lput (length remove-duplicates [theta_1] of turtles with [age >= i and age < i + gap]) mylist]
+    ;[set mylist lput (length remove-duplicates [theta_1] of turtles with [age >= i and age < i + gap]) mylist]
+    [set mylist lput (count turtles with [age >= i and age < i + gap]) mylist]
     [set mylist lput 0 mylist]
     set i i + 1
     ]
@@ -730,12 +730,13 @@ to-report age-diversity2
   let mylist []
   let i 0
   let gap 1
-  if timescale [set gap 12]
+  if timescale [set gap 8]
   let oldest floor (max [age] of turtles) / gap
   while [i <= oldest]
   [
     ifelse any? turtles with [age >= i and age < i + gap]
     [set mylist lput (length remove-duplicates [theta_2] of turtles with [age >= i and age < i + gap]) mylist]
+     ;[set mylist lput (count turtles with [age >= i and age < i + gap]) mylist]
     [set mylist lput 0 mylist]
     set i i + 1
     ]
@@ -827,10 +828,10 @@ NIL
 NIL
 
 TEXTBOX
-600
-395
-780
+305
+390
 485
+480
  Strategies colormap\n\nRed       Maxi\nGreen    mini\nBlue    Conformist\nWhite     Anti-conformist\n                      \n                       
 11
 0.0
@@ -845,7 +846,7 @@ strength-of-dilemma
 strength-of-dilemma
 0
 0.5
-0.42
+0.41
 0.01
 1
 NIL
@@ -914,7 +915,7 @@ density
 density
 0.1
 1
-1
+0.78
 0.01
 1
 NIL
@@ -929,7 +930,7 @@ Transcription-error
 Transcription-error
 0
 1
-0.06
+0.04
 0.01
 1
 NIL
@@ -944,7 +945,7 @@ Initial-prob-update-rule
 Initial-prob-update-rule
 0
 1.0
-1
+0.49
 0.01
 1
 NIL
@@ -957,7 +958,7 @@ SWITCH
 443
 random-init
 random-init
-0
+1
 1
 -1000
 
@@ -970,7 +971,7 @@ Initial-prob-update-behavior
 Initial-prob-update-behavior
 0
 1
-1
+0.28
 0.01
 1
 NIL
@@ -985,7 +986,7 @@ Initial-weighting-history
 Initial-weighting-history
 0
 1
-0
+0.57
 0.01
 1
 NIL
@@ -1000,7 +1001,7 @@ Initial-like-to-move
 Initial-like-to-move
 0
 1
-0.51
+0.31
 0.01
 1
 NIL
@@ -1015,15 +1016,15 @@ distribution theta
 1 / theta
 NIL
 0.0
-10.0
+100.0
 0.0
-650.0
+100.0
 true
 true
 PENS
 "theta_1" 1.0 0 -2674135 true
 "theta_2" 1.0 0 -13840069 true
-"fight" 1.0 0 -16777216 true
+"conflict" 1.0 0 -16777216 true
 
 PLOT
 935
@@ -1042,7 +1043,7 @@ true
 PENS
 "alpha" 1.0 0 -13345367 true
 "mu" 1.0 0 -2674135 true
-"fight" 1.0 0 -16777216 true
+"conflict" 1.0 0 -16777216 true
 
 PLOT
 571
@@ -1083,7 +1084,7 @@ influence
 influence
 0
 1
-0.5
+0.87
 0.01
 1
 NIL
@@ -1147,7 +1148,7 @@ Initial-prob-conflict
 Initial-prob-conflict
 0
 1
-0.5
+0.57
 0.01
 1
 NIL
